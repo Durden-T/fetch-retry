@@ -454,53 +454,41 @@ function applyAllSettings() {
 // Show retry toast notification
 function showRetryToast(attempt, maxRetries, error) {
     const currentAttempt = attempt + 1;
-    const message = `retry ${currentAttempt}/${maxRetries + 1}`;
+    const message = `retry ${currentAttempt}/${maxRetries}`;
+    
+    // Build full message with error if available
+    let fullMessage = message;
+    if (error) {
+        const errorMessage = error.message || error.toString() || 'Unknown error';
+        fullMessage = `${message}: ${errorMessage}`;
+    }
     
     if (typeof toastr !== 'undefined') {
-        const toast = /** @type {any} */ (toastr).info(message, 'Fetch Retry', {
+        const toast = /** @type {any} */ (toastr).info(fullMessage, 'Fetch Retry', {
             timeOut: 5000,
             extendedTimeOut: 10000,
             closeButton: true
         });
         
-        // Make toast clickable to show error
-        if (error) {
-            // Use setTimeout to ensure toast element is in DOM
-            setTimeout(() => {
-                // Find the toast element - toastr may return different types
-                let $toast;
-                if (typeof toast === 'string') {
-                    // If toast is an ID string
-                    $toast = $(`#${toast}`);
-                } else if (toast && toast.jquery) {
-                    // If toast is already a jQuery object
-                    $toast = toast;
-                } else if (toast) {
-                    // If toast is a DOM element
-                    $toast = $(toast);
-                } else {
-                    // Fallback: find the last toast element
-                    $toast = $('.toast:last');
-                }
-                
-                if ($toast && $toast.length > 0) {
-                    $toast.css('cursor', 'pointer');
-                    $toast.off('click.retry-error').on('click.retry-error', function() {
-                        const errorMessage = error.message || error.toString() || 'Unknown error';
-                        /** @type {any} */ (toastr).error(errorMessage, 'Error Details', {
-                            timeOut: 10000,
-                            extendedTimeOut: 20000,
-                            closeButton: true
-                        });
-                    });
-                }
-            }, 100);
-        }
-        
         console.log(`[Fetch Retry] Retry toast shown: ${message}`);
     } else {
-        console.log(`[Fetch Retry] Retry ${currentAttempt}/${maxRetries + 1}`);
+        console.log(`[Fetch Retry] Retry ${currentAttempt}/${maxRetries}`);
     }
+}
+
+// Handle retry: show toast, calculate delay, wait, and increment attempt
+async function handleRetry(error, response, attempt) {
+    // Show retry toast only if this is a retry (not first attempt)
+    if (attempt > 0) {
+        showRetryToast(attempt, fetchRetrySettings.maxRetries, error);
+    }
+    
+    // Determine delay for retry
+    const delay = getRetryDelay(error, response, attempt);
+    console.log(`[Fetch Retry] Waiting ${delay}ms before retry...`);
+    
+    await new Promise(resolve => setTimeout(resolve, delay));
+    return attempt + 1;
 }
 
 // Show error notification function
@@ -723,14 +711,7 @@ if (!(/** @type {any} */ (window))._fetchRetryPatched) {
 
                     if (invalid && attempt < fetchRetrySettings.maxRetries) {
                         console.warn(`[Fetch Retry] Response is invalid (${reason}), retrying... attempt ${attempt + 1}/${fetchRetrySettings.maxRetries + 1}`);
-                        
-                        // Show retry toast
-                        showRetryToast(attempt, fetchRetrySettings.maxRetries, new Error(`Response invalid: ${reason}`));
-                        
-                        const delay = getRetryDelay(null, processedResult, attempt);
-                        console.log(`[Fetch Retry] Waiting ${delay}ms before retry...`);
-                        await new Promise(resolve => setTimeout(resolve, delay));
-                        attempt++;
+                        attempt = await handleRetry(new Error(`Response invalid: ${reason}`), processedResult, attempt);
                         continue;
                     }
                     if (fetchRetrySettings.debugMode) console.log('[Fetch Retry Debug] Response is valid or max retries reached for invalid response. Returning result.');
@@ -741,21 +722,13 @@ if (!(/** @type {any} */ (window))._fetchRetryPatched) {
                 if (result.status === 429) {
                     console.warn(`[Fetch Retry] Rate limited (429), attempt ${attempt + 1}/${fetchRetrySettings.maxRetries + 1}`);
                     if (attempt < fetchRetrySettings.maxRetries) {
-                        showRetryToast(attempt, fetchRetrySettings.maxRetries, new Error(`Rate limited (429): ${result.statusText}`));
-                        const delay = getRetryDelay(null, result, attempt);
-                        console.log(`[Fetch Retry] Waiting ${delay}ms before retry...`);
-                        await new Promise(resolve => setTimeout(resolve, delay));
-                        attempt++;
+                        attempt = await handleRetry(new Error(`Rate limited (429): ${result.statusText}`), result, attempt);
                         continue;
                     }
                 } else if (result.status >= 500) {
                     console.warn(`[Fetch Retry] Server error (${result.status}), attempt ${attempt + 1}/${fetchRetrySettings.maxRetries + 1}`);
                     if (attempt < fetchRetrySettings.maxRetries) {
-                        showRetryToast(attempt, fetchRetrySettings.maxRetries, new Error(`Server error (${result.status}): ${result.statusText}`));
-                        const delay = getRetryDelay(null, result, attempt);
-                        console.log(`[Fetch Retry] Waiting ${delay}ms before retry...`);
-                        await new Promise(resolve => setTimeout(resolve, delay));
-                        attempt++;
+                        attempt = await handleRetry(new Error(`Server error (${result.status}): ${result.statusText}`), result, attempt);
                         continue;
                     }
                 } else if (result.status >= 400) {
@@ -807,15 +780,7 @@ if (!(/** @type {any} */ (window))._fetchRetryPatched) {
                     break;
                 }
                 
-                // Show retry toast
-                showRetryToast(attempt, fetchRetrySettings.maxRetries, err);
-                
-                // Determine delay for retry
-                const delay = getRetryDelay(err, lastResponse, attempt);
-                console.log(`[Fetch Retry] Waiting ${delay}ms before retry...`);
-                
-                await new Promise(resolve => setTimeout(resolve, delay));
-                attempt++;
+                attempt = await handleRetry(err, lastResponse, attempt);
             }
         }
         
