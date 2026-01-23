@@ -4,18 +4,15 @@ const EXTENSION_NAME = 'Fetch Retry';
 const extensionName = 'fetch-retry';
 
 function getBaseUrl() {
-  let baseUrl = '';
   if (typeof import.meta !== 'undefined' && import.meta.url) {
-    baseUrl = new URL('.', import.meta.url).href;
-  } else {
-    const { currentScript } = document;
-    if (currentScript && currentScript.src) {
-      baseUrl = currentScript.src.substring(0, currentScript.src.lastIndexOf('/'));
-    } else {
-      baseUrl = `${window.location.origin}data/default-user/extensions/${extensionName}`;
-    }
+    return new URL('..', import.meta.url).href;
   }
-  return baseUrl;
+  const { currentScript } = document;
+  if (currentScript?.src) {
+    const srcDir = currentScript.src.substring(0, currentScript.src.lastIndexOf('/'));
+    return srcDir.substring(0, srcDir.lastIndexOf('/'));
+  }
+  return `${window.location.origin}/scripts/extensions/third-party/${extensionName}`;
 }
 
 export function toggleCss(shouldLoad, logger) {
@@ -23,9 +20,8 @@ export function toggleCss(shouldLoad, logger) {
   const existingLink = document.getElementById('FetchRetry-style');
 
   if (shouldLoad) {
-    const baseUrl = getBaseUrl();
     if (!existingLink) {
-      const cssUrl = `${baseUrl}/style.css`;
+      const cssUrl = new URL('style.css', getBaseUrl()).href;
       const link = document.createElement('link');
       link.id = 'FetchRetry-style';
       link.rel = 'stylesheet';
