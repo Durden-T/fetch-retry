@@ -1,6 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');
 
-#FetchRetry-drawer {
+:root {
     --fr-terminal-bg: #0a0e14;
     --fr-panel-bg: #0d1117;
     --fr-accent-cyan: #00d9ff;
@@ -15,7 +15,7 @@
     --fr-glow-amber: rgba(255, 183, 0, 0.4);
 }
 
-#FetchRetry-drawer:has(.inline-drawer-content.open) {
+#FetchRetry-drawer {
     font-family: 'IBM Plex Mono', 'Courier New', monospace;
     background: var(--fr-terminal-bg);
     border: 1px solid var(--fr-border);
@@ -25,7 +25,7 @@
     box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
 }
 
-#FetchRetry-drawer:has(.inline-drawer-content.open)::before {
+#FetchRetry-drawer::before {
     content: '';
     position: absolute;
     top: 0;
@@ -42,15 +42,15 @@
         );
     pointer-events: none;
     opacity: 0.3;
-    animation: fr-scanline 8s linear infinite;
+    animation: scanline 8s linear infinite;
 }
 
-@keyframes fr-scanline {
+@keyframes scanline {
     0% { transform: translateY(0); }
     100% { transform: translateY(20px); }
 }
 
-#FetchRetry-drawer:has(.inline-drawer-content.open) .inline-drawer-header {
+.inline-drawer-header {
     background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
     padding: 18px 20px;
     border-bottom: 2px solid var(--fr-accent-cyan);
@@ -60,7 +60,7 @@
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-#FetchRetry-drawer:has(.inline-drawer-content.open) .inline-drawer-header::before {
+.inline-drawer-header::before {
     content: '';
     position: absolute;
     top: 0;
@@ -71,11 +71,11 @@
     transition: left 0.6s ease;
 }
 
-#FetchRetry-drawer:has(.inline-drawer-content.open) .inline-drawer-header:hover::before {
+.inline-drawer-header:hover::before {
     left: 100%;
 }
 
-#FetchRetry-drawer:has(.inline-drawer-content.open) .inline-drawer-header b {
+.inline-drawer-header b {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 15px;
     font-weight: 700;
@@ -86,28 +86,28 @@
     position: relative;
 }
 
-#FetchRetry-drawer:has(.inline-drawer-content.open) .inline-drawer-header b::before {
+.inline-drawer-header b::before {
     content: '> ';
     color: var(--fr-accent-amber);
-    animation: fr-blink 1.5s infinite;
+    animation: blink 1.5s infinite;
 }
 
-@keyframes fr-blink {
+@keyframes blink {
     0%, 49% { opacity: 1; }
     50%, 100% { opacity: 0.3; }
 }
 
-#FetchRetry-drawer:has(.inline-drawer-content.open) .inline-drawer-icon {
+.inline-drawer-icon {
     color: var(--fr-accent-cyan);
     transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
     filter: drop-shadow(0 0 4px var(--fr-glow-cyan));
 }
 
-#FetchRetry-drawer:has(.inline-drawer-content.open) .inline-drawer-header.open .inline-drawer-icon.up {
+.inline-drawer-header.open .inline-drawer-icon.up {
     transform: rotate(180deg);
 }
 
-#FetchRetry-drawer .inline-drawer-content {
+.inline-drawer-content {
     background: var(--fr-panel-bg);
     padding: 0;
     max-height: 0;
@@ -115,12 +115,12 @@
     transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), padding 0.4s ease;
 }
 
-#FetchRetry-drawer .inline-drawer-content.open {
+.inline-drawer-content.open {
     max-height: 2000px;
     padding: 24px 20px;
 }
 
-#FetchRetry-drawer .fetch-retry-setting-item {
+.fetch-retry-setting-item {
     margin-bottom: 20px;
     padding: 16px;
     background: rgba(22, 27, 34, 0.5);
@@ -129,28 +129,28 @@
     position: relative;
     opacity: 0;
     transform: translateX(-20px);
-    animation: fr-slideIn 0.5s ease forwards;
+    animation: slideIn 0.5s ease forwards;
 }
 
-@keyframes fr-slideIn {
+@keyframes slideIn {
     to {
         opacity: 1;
         transform: translateX(0);
     }
 }
 
-#FetchRetry-drawer .fetch-retry-setting-item:nth-child(1) { animation-delay: 0.05s; }
-#FetchRetry-drawer .fetch-retry-setting-item:nth-child(2) { animation-delay: 0.1s; }
-#FetchRetry-drawer .fetch-retry-setting-item:nth-child(3) { animation-delay: 0.15s; }
-#FetchRetry-drawer .fetch-retry-setting-item:nth-child(4) { animation-delay: 0.2s; }
-#FetchRetry-drawer .fetch-retry-setting-item:nth-child(5) { animation-delay: 0.25s; }
-#FetchRetry-drawer .fetch-retry-setting-item:nth-child(6) { animation-delay: 0.3s; }
-#FetchRetry-drawer .fetch-retry-setting-item:nth-child(7) { animation-delay: 0.35s; }
-#FetchRetry-drawer .fetch-retry-setting-item:nth-child(8) { animation-delay: 0.4s; }
-#FetchRetry-drawer .fetch-retry-setting-item:nth-child(9) { animation-delay: 0.45s; }
-#FetchRetry-drawer .fetch-retry-setting-item:nth-child(10) { animation-delay: 0.5s; }
+.fetch-retry-setting-item:nth-child(1) { animation-delay: 0.05s; }
+.fetch-retry-setting-item:nth-child(2) { animation-delay: 0.1s; }
+.fetch-retry-setting-item:nth-child(3) { animation-delay: 0.15s; }
+.fetch-retry-setting-item:nth-child(4) { animation-delay: 0.2s; }
+.fetch-retry-setting-item:nth-child(5) { animation-delay: 0.25s; }
+.fetch-retry-setting-item:nth-child(6) { animation-delay: 0.3s; }
+.fetch-retry-setting-item:nth-child(7) { animation-delay: 0.35s; }
+.fetch-retry-setting-item:nth-child(8) { animation-delay: 0.4s; }
+.fetch-retry-setting-item:nth-child(9) { animation-delay: 0.45s; }
+.fetch-retry-setting-item:nth-child(10) { animation-delay: 0.5s; }
 
-#FetchRetry-drawer .fetch-retry-setting-item::before {
+.fetch-retry-setting-item::before {
     content: '';
     position: absolute;
     top: 0;
@@ -162,28 +162,28 @@
     transition: height 0.3s ease;
 }
 
-#FetchRetry-drawer .fetch-retry-setting-item:hover::before {
+.fetch-retry-setting-item:hover::before {
     height: 100%;
 }
 
-#FetchRetry-drawer .fetch-retry-setting-item:last-child {
+.fetch-retry-setting-item:last-child {
     margin-bottom: 0;
 }
 
-#FetchRetry-drawer .fetch-retry-setting-wrapper {
+.fetch-retry-setting-wrapper {
     display: flex;
     flex-direction: column;
     gap: 10px;
 }
 
-#FetchRetry-drawer .fetch-retry-setting-wrapper .setting-row {
+.fetch-retry-setting-wrapper .setting-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 16px;
 }
 
-#FetchRetry-drawer .fetch-retry-setting-wrapper label {
+.fetch-retry-setting-wrapper label {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 13px;
     font-weight: 600;
@@ -193,7 +193,7 @@
     flex: 1;
 }
 
-#FetchRetry-drawer .fetch-retry-setting-wrapper small {
+.fetch-retry-setting-wrapper small {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 11px;
     color: var(--fr-text-secondary);
@@ -202,7 +202,7 @@
     font-weight: 400;
 }
 
-#FetchRetry-drawer .fetch-retry-setting-wrapper input[type="checkbox"] {
+.fetch-retry-setting-wrapper input[type="checkbox"] {
     width: 22px;
     height: 22px;
     appearance: none;
@@ -217,18 +217,18 @@
     );
 }
 
-#FetchRetry-drawer .fetch-retry-setting-wrapper input[type="checkbox"]:hover {
+.fetch-retry-setting-wrapper input[type="checkbox"]:hover {
     border-color: var(--fr-accent-cyan);
     box-shadow: 0 0 8px var(--fr-glow-cyan);
 }
 
-#FetchRetry-drawer .fetch-retry-setting-wrapper input[type="checkbox"]:checked {
+.fetch-retry-setting-wrapper input[type="checkbox"]:checked {
     background: var(--fr-accent-cyan);
     border-color: var(--fr-accent-cyan);
     box-shadow: 0 0 12px var(--fr-glow-cyan);
 }
 
-#FetchRetry-drawer .fetch-retry-setting-wrapper input[type="checkbox"]:checked::after {
+.fetch-retry-setting-wrapper input[type="checkbox"]:checked::after {
     content: '';
     position: absolute;
     top: 3px;
@@ -239,7 +239,7 @@
     clip-path: polygon(20% 50%, 40% 70%, 80% 20%, 75% 15%, 40% 60%, 25% 45%);
 }
 
-#FetchRetry-drawer .fetch-retry-setting-wrapper .slider-container {
+.fetch-retry-setting-wrapper .slider-container {
     display: flex;
     align-items: center;
     gap: 12px;
@@ -247,11 +247,11 @@
     margin-top: 8px;
 }
 
-#FetchRetry-drawer .fetch-retry-setting-wrapper input[type="range"] {
+.fetch-retry-setting-wrapper input[type="range"] {
     display: none;
 }
 
-#FetchRetry-drawer .fetch-retry-setting-wrapper input[type="number"] {
+.fetch-retry-setting-wrapper input[type="number"] {
     font-family: 'IBM Plex Mono', monospace;
     background: var(--fr-terminal-bg);
     border: 2px solid var(--fr-border);
@@ -270,25 +270,25 @@
     );
 }
 
-#FetchRetry-drawer .fetch-retry-setting-wrapper input[type="number"]:hover {
+.fetch-retry-setting-wrapper input[type="number"]:hover {
     border-color: var(--fr-accent-cyan);
     box-shadow: 0 0 10px var(--fr-glow-cyan);
 }
 
-#FetchRetry-drawer .fetch-retry-setting-wrapper input[type="number"]:focus {
+.fetch-retry-setting-wrapper input[type="number"]:focus {
     outline: none;
     border-color: var(--fr-accent-cyan);
     box-shadow: 0 0 15px var(--fr-glow-cyan);
     background: rgba(0, 217, 255, 0.05);
 }
 
-#FetchRetry-drawer .fetch-retry-setting-wrapper input[type="number"]::-webkit-inner-spin-button,
-#FetchRetry-drawer .fetch-retry-setting-wrapper input[type="number"]::-webkit-outer-spin-button {
+.fetch-retry-setting-wrapper input[type="number"]::-webkit-inner-spin-button,
+.fetch-retry-setting-wrapper input[type="number"]::-webkit-outer-spin-button {
     opacity: 0.6;
     cursor: pointer;
 }
 
-#FetchRetry-drawer .fetch-retry-setting-wrapper textarea {
+.fetch-retry-setting-wrapper textarea {
     width: 100%;
     min-height: 150px;
     font-family: 'IBM Plex Mono', monospace;
@@ -305,21 +305,20 @@
     transition: all 0.2s ease;
 }
 
-#FetchRetry-drawer .fetch-retry-setting-wrapper textarea:focus {
+.fetch-retry-setting-wrapper textarea:focus {
     outline: none;
     border-color: var(--fr-accent-cyan);
     box-shadow: 0 0 15px var(--fr-glow-cyan);
 }
 
-#FetchRetry-drawer .fetch-retry-setting-wrapper .button-container {
+.fetch-retry-setting-wrapper .button-container {
     display: flex;
     gap: 10px;
     margin-top: 12px;
     justify-content: flex-end;
 }
 
-#FetchRetry-drawer .fetch-retry-warning,
-#FetchRetry-drawer .fetch-retry-note {
+.fetch-retry-warning, .fetch-retry-note {
     padding: 14px 16px;
     margin-bottom: 16px;
     border-radius: 0;
@@ -331,24 +330,24 @@
     letter-spacing: 0.3px;
 }
 
-#FetchRetry-drawer .fetch-retry-warning {
+.fetch-retry-warning {
     background: rgba(255, 183, 0, 0.08);
     border-left-color: var(--fr-accent-amber);
     color: var(--fr-accent-amber);
 }
 
-#FetchRetry-drawer .fetch-retry-warning::before {
+.fetch-retry-warning::before {
     content: '[!] ';
     font-weight: 700;
 }
 
-#FetchRetry-drawer .fetch-retry-note {
+.fetch-retry-note {
     background: rgba(0, 217, 255, 0.06);
     border-left-color: var(--fr-accent-cyan);
     color: var(--fr-accent-cyan);
 }
 
-#FetchRetry-drawer .fetch-retry-note::before {
+.fetch-retry-note::before {
     content: '[i] ';
     font-weight: 700;
 }

@@ -63,8 +63,7 @@ async function prepareRequestData(args) {
 
 function calculateRetryDelay(error, response, attempt, settings, logger) {
   logger.debug(`Calculating retry delay for attempt ${attempt}.`);
-  let delay = settings.minRetryDelay;
-  logger.debug(`Initial delay: ${delay}ms`);
+  let delay = 0;
 
   if (response && response.headers.has('Retry-After')) {
     const retryAfter = response.headers.get('Retry-After');
