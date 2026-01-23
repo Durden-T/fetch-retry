@@ -77,6 +77,26 @@ export const SETTINGS_CONFIG = [
     default: false,
     description: 'Prints verbose logs to the browser console (F12) to help diagnose retry issues.',
   },
+  {
+    type: 'select',
+    varId: 'urlFilterMode',
+    displayText: 'URL Filter Mode',
+    default: 'include',
+    options: [
+      { value: 'include', label: 'Include only matching URLs' },
+      { value: 'exclude', label: 'Exclude matching URLs' },
+    ],
+    description: 'Include mode: only retry URLs matching patterns. Exclude mode: retry all URLs except matching patterns.',
+  },
+  {
+    type: 'textarea',
+    varId: 'urlPatterns',
+    displayText: 'URL Patterns (regex, one per line)',
+    default: ['/api/backends/', '/api/chats/', '/v1/chat/completions'],
+    description: 'Regular expression patterns to match against request URLs. One pattern per line. Max 50 patterns, 500 chars each.',
+    maxPatterns: 50,
+    maxPatternLength: 500,
+  },
 ];
 
 function generateDefaultSettings() {
@@ -94,7 +114,17 @@ export function loadSettings(saved, target) {
     const { varId, type, default: defaultValue } = setting;
     if (saved[varId] !== undefined) {
       const loadedValue = saved[varId];
-      target[varId] = type === 'checkbox' ? Boolean(loadedValue) : Number(loadedValue);
+      if (type === 'checkbox') {
+        target[varId] = Boolean(loadedValue);
+      } else if (type === 'slider') {
+        target[varId] = Number(loadedValue);
+      } else if (type === 'textarea') {
+        target[varId] = Array.isArray(loadedValue) ? loadedValue : defaultValue;
+      } else if (type === 'select') {
+        target[varId] = String(loadedValue);
+      } else {
+        target[varId] = loadedValue;
+      }
     } else if (target[varId] === undefined) {
       target[varId] = defaultValue;
     }

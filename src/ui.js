@@ -119,6 +119,91 @@ function createSettingItem(container, setting, settings, context, logger) {
       sliderContainer.appendChild(numberInput);
       settingWrapper.appendChild(sliderContainer);
       break;
+    case 'select':
+      inputElement = document.createElement('select');
+      inputElement.id = `fetch-retry-${varId}`;
+      inputElement.classList.add('text_pole');
+
+      setting.options.forEach(option => {
+        const optionElement = document.createElement('option');
+        optionElement.value = option.value;
+        optionElement.textContent = option.label;
+        inputElement.appendChild(optionElement);
+      });
+
+      inputElement.value = String(settings[varId] ?? defaultValue);
+      inputElement.addEventListener('change', () => {
+        settings[varId] = inputElement.value;
+        context.saveSettingsDebounced();
+        logger.debug(`Select setting changed: ${varId} = ${inputElement.value}`);
+      });
+      settingRow.appendChild(inputElement);
+      break;
+    case 'textarea':
+      inputElement = document.createElement('textarea');
+      inputElement.id = `fetch-retry-${varId}`;
+      inputElement.classList.add('text_pole');
+      inputElement.rows = 5;
+      inputElement.style.width = '100%';
+      inputElement.style.fontFamily = 'monospace';
+
+      const patterns = settings[varId] ?? defaultValue;
+      inputElement.value = Array.isArray(patterns) ? patterns.join('\n') : '';
+
+      const errorElement = document.createElement('div');
+      errorElement.id = `fetch-retry-${varId}-error`;
+      errorElement.style.color = 'var(--SmartThemeQuoteColor, #ff4444)';
+      errorElement.style.marginTop = '5px';
+      errorElement.style.display = 'none';
+
+      inputElement.addEventListener('input', () => {
+        const lines = inputElement.value
+          .split('\n')
+          .map(line => line.trim())
+          .filter(line => line.length > 0);
+
+        const maxPatterns = setting.maxPatterns || 50;
+        const maxLength = setting.maxPatternLength || 500;
+        const errors = [];
+
+        if (lines.length > maxPatterns) {
+          errors.push(`Too many patterns (${lines.length}/${maxPatterns})`);
+        }
+
+        const tooLongPatterns = lines.filter(p => p.length > maxLength);
+        if (tooLongPatterns.length > 0) {
+          errors.push(`${tooLongPatterns.length} pattern(s) exceed ${maxLength} chars`);
+        }
+
+        const invalidPatterns = [];
+        for (const pattern of lines) {
+          try {
+            new RegExp(pattern);
+          } catch (err) {
+            invalidPatterns.push(pattern);
+          }
+        }
+
+        if (invalidPatterns.length > 0) {
+          errors.push(`Invalid regex: ${invalidPatterns.slice(0, 3).join(', ')}${invalidPatterns.length > 3 ? '...' : ''}`);
+        }
+
+        if (errors.length > 0) {
+          errorElement.textContent = errors.join('; ');
+          errorElement.style.display = 'block';
+          inputElement.style.borderColor = 'var(--SmartThemeQuoteColor, #ff4444)';
+        } else {
+          errorElement.style.display = 'none';
+          inputElement.style.borderColor = '';
+          settings[varId] = lines;
+          context.saveSettingsDebounced();
+          logger.debug(`Textarea setting changed: ${varId} = ${JSON.stringify(lines)}`);
+        }
+      });
+
+      settingWrapper.appendChild(inputElement);
+      settingWrapper.appendChild(errorElement);
+      break;
   }
 
   container.appendChild(settingWrapper);
@@ -145,6 +230,13 @@ function applyAllSettings(settings, logger) {
           numberInput.value = String(settings[varId]);
           logger.debug(`UI slider and number input updated for ${varId}: ${String(settings[varId])}`);
         }
+      } else if (type === 'select') {
+        element.value = String(settings[varId]);
+        logger.debug(`UI select updated for ${varId}: ${String(settings[varId])}`);
+      } else if (type === 'textarea') {
+        const patterns = settings[varId];
+        element.value = Array.isArray(patterns) ? patterns.join('\n') : '';
+        logger.debug(`UI textarea updated for ${varId}: ${JSON.stringify(patterns)}`);
       }
     }
   });

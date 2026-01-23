@@ -1,5 +1,70 @@
 import { showRetryToast, showErrorNotification } from './toast.js';
 
+let cachedPatterns = null;
+let cachedPatternsKey = null;
+
+function getCachedPatterns(urlPatterns, logger) {
+  const patternsKey = JSON.stringify(urlPatterns);
+
+  if (cachedPatternsKey === patternsKey && cachedPatterns !== null) {
+    return cachedPatterns;
+  }
+
+  const compiledPatterns = [];
+  for (const pattern of urlPatterns) {
+    try {
+      compiledPatterns.push(new RegExp(pattern));
+    } catch (err) {
+      logger.warn(`Invalid regex pattern "${pattern}": ${err.message}`);
+    }
+  }
+
+  cachedPatterns = compiledPatterns;
+  cachedPatternsKey = patternsKey;
+  logger.debug(`Compiled ${compiledPatterns.length} regex patterns (cached).`);
+
+  return compiledPatterns;
+}
+
+function shouldApplyRetryLogic(url, settings, logger) {
+  const { urlPatterns, urlFilterMode } = settings;
+
+  if (!Array.isArray(urlPatterns) || urlPatterns.length === 0) {
+    if (urlFilterMode === 'include') {
+      logger.debug('No URL patterns configured with include mode, bypassing retry logic.');
+      return false;
+    }
+    logger.debug('No URL patterns configured, applying retry logic to all requests.');
+    return true;
+  }
+
+  const compiledPatterns = getCachedPatterns(urlPatterns, logger);
+
+  if (compiledPatterns.length === 0) {
+    if (urlFilterMode === 'include') {
+      logger.debug('No valid URL patterns with include mode, bypassing retry logic.');
+      return false;
+    }
+    logger.debug('No valid URL patterns, applying retry logic to all requests.');
+    return true;
+  }
+
+  const matches = compiledPatterns.some(regex => regex.test(url));
+
+  if (urlFilterMode === 'include') {
+    const shouldRetry = matches;
+    logger.debug(`URL filter (include): ${url} ${shouldRetry ? 'matches' : 'does not match'} patterns.`);
+    return shouldRetry;
+  } else if (urlFilterMode === 'exclude') {
+    const shouldRetry = !matches;
+    logger.debug(`URL filter (exclude): ${url} ${shouldRetry ? 'does not match' : 'matches'} patterns.`);
+    return shouldRetry;
+  }
+
+  logger.warn(`Unknown urlFilterMode: ${urlFilterMode}, applying retry logic.`);
+  return true;
+}
+
 async function prepareRequestData(args) {
   let bodyContent = null;
   let baseUrl;
@@ -106,6 +171,11 @@ export function createRetryableFetch(originalFetch, settings, logger) {
 
     const requestUrl = args[0] instanceof Request ? args[0].url : String(args[0]);
     logger.debug('Intercepted a fetch request.', { url: requestUrl, attempt: 0 });
+
+    if (!shouldApplyRetryLogic(requestUrl, settings, logger)) {
+      logger.debug(`URL ${requestUrl} does not match filter patterns. Bypassing retry logic.`);
+      return originalFetch.apply(this, args);
+    }
 
     const originalSignal = args[0] instanceof Request ? args[0].signal : (args[1]?.signal);
     if (originalSignal?.aborted) {

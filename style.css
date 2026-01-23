@@ -149,6 +149,8 @@
 #FetchRetry-drawer .fetch-retry-setting-item:nth-child(8) { animation-delay: 0.4s; }
 #FetchRetry-drawer .fetch-retry-setting-item:nth-child(9) { animation-delay: 0.45s; }
 #FetchRetry-drawer .fetch-retry-setting-item:nth-child(10) { animation-delay: 0.5s; }
+#FetchRetry-drawer .fetch-retry-setting-item:nth-child(11) { animation-delay: 0.55s; }
+#FetchRetry-drawer .fetch-retry-setting-item:nth-child(12) { animation-delay: 0.6s; }
 
 #FetchRetry-drawer .fetch-retry-setting-item::before {
     content: '';
@@ -286,6 +288,44 @@
 #FetchRetry-drawer .fetch-retry-setting-wrapper input[type="number"]::-webkit-outer-spin-button {
     opacity: 0.6;
     cursor: pointer;
+}
+
+#FetchRetry-drawer .fetch-retry-setting-wrapper select {
+    font-family: 'IBM Plex Mono', monospace;
+    background: var(--fr-terminal-bg);
+    border: 2px solid var(--fr-border);
+    color: var(--fr-accent-cyan);
+    padding: 10px 14px;
+    border-radius: 0;
+    width: auto;
+    min-width: 200px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    clip-path: polygon(
+        0 0, calc(100% - 10px) 0, 100% 10px,
+        100% 100%, 10px 100%, 0 calc(100% - 10px)
+    );
+}
+
+#FetchRetry-drawer .fetch-retry-setting-wrapper select:hover {
+    border-color: var(--fr-accent-cyan);
+    box-shadow: 0 0 10px var(--fr-glow-cyan);
+}
+
+#FetchRetry-drawer .fetch-retry-setting-wrapper select:focus {
+    outline: none;
+    border-color: var(--fr-accent-cyan);
+    box-shadow: 0 0 15px var(--fr-glow-cyan);
+    background: rgba(0, 217, 255, 0.05);
+}
+
+#FetchRetry-drawer .fetch-retry-setting-wrapper select option {
+    background: var(--fr-terminal-bg);
+    color: var(--fr-text-primary);
+    padding: 8px;
 }
 
 #FetchRetry-drawer .fetch-retry-setting-wrapper textarea {
