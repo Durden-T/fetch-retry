@@ -1,0 +1,236 @@
+import eslintPluginCompat from 'eslint-plugin-compat';
+import eslintPluginImport from 'eslint-plugin-import';
+
+// Constants for magic numbers
+const MAX_COMPLEXITY = 20;
+const INDENT_SIZE = 2;
+const MAX_DEPTH = 5;
+const MAX_NESTED_CALLBACKS = 4;
+const MAX_PARAMS = 6;
+const MAX_STATEMENTS = 30;
+const MAX_LINES_PER_FUNCTION = 100;
+const MAX_LINE_LENGTH = 120;
+
+export default [
+  {
+    files: ['**/*.js'],
+    ignores: [
+      'node_modules/',
+      '.git/',
+      '.beads/',
+      '.ralph-tui/',
+      '.claude/',
+      'dist/',
+      'build/',
+      'coverage/',
+      '*.min.js',
+      'style.css',
+    ],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      globals: {
+        console: 'readonly',
+        window: 'readonly',
+        document: 'readonly',
+        fetch: 'readonly',
+        Request: 'readonly',
+        Response: 'readonly',
+        Headers: 'readonly',
+        URL: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        ArrayBuffer: 'readonly',
+        Uint8Array: 'readonly',
+        Blob: 'readonly',
+        ReadableStream: 'readonly',
+        SillyTavern: 'readonly',
+        toastr: 'readonly',
+        alert: 'readonly',
+        DOMException: 'readonly',
+        AbortController: 'readonly',
+        structuredClone: 'readonly',
+      },
+    },
+    plugins: {
+      compat: eslintPluginCompat,
+      import: eslintPluginImport,
+    },
+    rules: {
+      // Strict mode - enforce for safety
+      'strict': ['error', 'global'],
+
+      // Critical Errors - must fix
+      'no-debugger': 'error',
+      'no-dupe-args': 'error',
+      'no-dupe-keys': 'error',
+      'no-duplicate-case': 'error',
+      'no-ex-assign': 'error',
+      'no-func-assign': 'error',
+      'no-invalid-regexp': 'error',
+      'no-obj-calls': 'error',
+      'no-sparse-arrays': 'error',
+      'no-unexpected-multiline': 'error',
+      'no-unreachable': 'error',
+      'no-unsafe-finally': 'error',
+      'no-unsafe-negation': 'error',
+      'use-isnan': 'error',
+      'valid-typeof': 'error',
+
+      // Important Best Practices
+      'array-callback-return': 'error',
+      'block-scoped-var': 'error',
+      'consistent-return': 'error',
+      'curly': ['error', 'multi-line'],
+      'dot-notation': 'error',
+      'eqeqeq': ['error', 'always'],
+      'no-caller': 'error',
+      'no-eval': 'error',
+      'no-extend-native': 'error',
+      'no-fallthrough': 'error',
+      'no-global-assign': 'error',
+      'no-implied-eval': 'error',
+      'no-loop-func': 'error',
+      'no-multi-str': 'error',
+      'no-new': 'error',
+      'no-new-func': 'error',
+      'no-new-wrappers': 'error',
+      'no-octal': 'error',
+      'no-octal-escape': 'error',
+      'no-param-reassign': ['error', { props: true, ignorePropertyModificationsFor: ['settings', 'context', 'target'] }],
+      'no-proto': 'error',
+      'no-redeclare': 'error',
+      'no-return-assign': 'error',
+      'no-script-url': 'error',
+      'no-self-assign': 'error',
+      'no-self-compare': 'error',
+      'no-sequences': 'error',
+      'no-throw-literal': 'error',
+      'no-unused-expressions': 'error',
+      'no-useless-call': 'error',
+      'no-useless-concat': 'error',
+      'no-useless-escape': 'error',
+      'no-useless-return': 'error',
+      'no-with': 'error',
+      'prefer-promise-reject-errors': 'error',
+      'radix': 'error',
+      'wrap-iife': ['error', 'inside'],
+
+      // Variables
+      'no-delete-var': 'error',
+      'no-shadow': 'error',
+      'no-shadow-restricted-names': 'error',
+      'no-undef': 'error',
+      'no-unused-vars': ['warn', { args: 'after-used', argsIgnorePattern: '^_', ignoreRestSiblings: true }],
+      'no-use-before-define': ['error', { functions: false, classes: true, variables: true }],
+
+      // Code Quality - warnings for improvement
+      'complexity': ['warn', MAX_COMPLEXITY],
+      'default-case': 'warn',
+      'max-depth': ['warn', MAX_DEPTH],
+      'max-lines-per-function': ['warn', MAX_LINES_PER_FUNCTION],
+      'max-nested-callbacks': ['warn', MAX_NESTED_CALLBACKS],
+      'max-params': ['warn', MAX_PARAMS],
+      'max-statements': ['warn', MAX_STATEMENTS],
+      'no-alert': 'warn',
+      'no-case-declarations': 'warn',
+      'no-magic-numbers': ['warn', { ignore: [0, 1, -1, 2, 100, 400, 429, 500, 1000, 1.5, 1.2], ignoreArrayIndexes: true }],
+
+      // Stylistic - important for consistency
+      'array-bracket-spacing': ['error', 'never'],
+      'block-spacing': ['error', 'always'],
+      'brace-style': ['error', '1tbs', { allowSingleLine: true }],
+      'camelcase': ['warn', { properties: 'always' }],
+      'comma-dangle': ['error', 'always-multiline'],
+      'comma-spacing': ['error', { before: false, after: true }],
+      'comma-style': ['error', 'last'],
+      'computed-property-spacing': ['error', 'never'],
+      'eol-last': ['error', 'always'],
+      'func-call-spacing': ['error', 'never'],
+      'indent': ['error', INDENT_SIZE, { SwitchCase: 1 }],
+      'key-spacing': ['error', { beforeColon: false, afterColon: true }],
+      'keyword-spacing': ['error', { before: true, after: true }],
+      'max-len': ['warn', { code: MAX_LINE_LENGTH, ignoreComments: true, ignoreUrls: true }],
+      'new-cap': 'error',
+      'new-parens': 'error',
+      'no-array-constructor': 'error',
+      'no-mixed-operators': 'warn',
+      'no-mixed-spaces-and-tabs': 'error',
+      'no-multiple-empty-lines': ['error', { max: 2, maxEOF: 1 }],
+      'no-new-object': 'error',
+      'no-trailing-spaces': 'error',
+      'no-whitespace-before-property': 'error',
+      'object-curly-spacing': ['error', 'always'],
+      'one-var': ['error', 'never'],
+      'operator-linebreak': ['error', 'after'],
+      'quotes': ['error', 'single', { avoidEscape: true }],
+      'semi': ['error', 'always'],
+      'semi-spacing': ['error', { before: false, after: true }],
+      'semi-style': ['error', 'last'],
+      'space-before-blocks': ['error', 'always'],
+      'space-before-function-paren': ['error', { anonymous: 'always', named: 'never', asyncArrow: 'always' }],
+      'space-in-parens': ['error', 'never'],
+      'space-infix-ops': 'error',
+      'spaced-comment': ['warn', 'always'],
+
+      // ES6
+      'arrow-body-style': ['error', 'as-needed'],
+      'arrow-parens': ['error', 'as-needed'],
+      'arrow-spacing': ['error', { before: true, after: true }],
+      'constructor-super': 'error',
+      'no-class-assign': 'error',
+      'no-confusing-arrow': 'error',
+      'no-const-assign': 'error',
+      'no-dupe-class-members': 'error',
+      'no-duplicate-imports': 'error',
+      'no-new-symbol': 'error',
+      'no-this-before-super': 'error',
+      'no-useless-computed-key': 'error',
+      'no-useless-constructor': 'error',
+      'no-useless-rename': 'error',
+      'no-var': 'error',
+      'object-shorthand': ['error', 'always'],
+      'prefer-const': 'warn',
+      'prefer-destructuring': ['warn', { object: true, array: false }],
+      'prefer-rest-params': 'error',
+      'prefer-spread': 'error',
+      'prefer-template': 'warn',
+      'template-curly-spacing': ['error', 'never'],
+
+      // Console usage - warn but don't break
+      'no-console': ['warn', { allow: ['warn', 'error', 'info', 'debug', 'log'] }],
+
+      // Import plugin rules
+      'import/no-unresolved': ['warn', { ignore: ['../../../../scripts/i18n.js'] }],
+      'import/named': 'error',
+      'import/default': 'error',
+      'import/export': 'error',
+      'import/no-absolute-path': 'error',
+      'import/no-dynamic-require': 'error',
+      'import/no-webpack-loader-syntax': 'error',
+      'import/no-self-import': 'error',
+      'import/no-cycle': 'error',
+
+      // Compat plugin rules
+      'compat/compat': 'warn',
+
+      // Handle 'this' in event handlers - allow 'this' in function expressions
+      'no-invalid-this': 'warn',
+    },
+    settings: {
+      'import/resolver': {
+        node: {
+          extensions: ['.js', '.json'],
+        },
+      },
+      'polyfills': [
+        'fetch',
+        'Promise',
+        'Object.assign',
+        'Array.prototype.includes',
+        'String.prototype.includes',
+        'Number.isInteger',
+      ],
+    },
+  },
+];

@@ -1,2 +1,9 @@
 # bv (beads viewer) local config and caches
 .bv/
+
+# Dependencies
+node_modules/
+
+# Ralph TUI local state
+.ralph-tui/
+.ralph_tui/

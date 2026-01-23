@@ -1,0 +1,32 @@
+{
+  "name": "sillytavern-fetch-retry",
+  "version": "1.2.5",
+  "description": "SillyTavern extension that monkey-patches fetch with automatic retry logic",
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "keywords": [
+    "sillytavern",
+    "extension",
+    "fetch",
+    "retry"
+  ],
+  "author": "Jxxy",
+  "license": "MIT",
+  "type": "module",
+  "devDependencies": {
+    "eslint": "^9.39.2",
+    "eslint-plugin-compat": "^6.0.2",
+    "eslint-plugin-import": "^2.32.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Durden-T/sillytavern-fetch-retry.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Durden-T/sillytavern-fetch-retry/issues"
+  },
+  "homepage": "https://github.com/Durden-T/sillytavern-fetch-retry#readme"
+}
