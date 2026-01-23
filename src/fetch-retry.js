@@ -200,8 +200,15 @@ export function createRetryableFetch(originalFetch, settings, logger) {
             break;
           }
         } else if (result.status >= 400) {
-          logger.info(`Client error (${result.status}): ${result.statusText}. Returning response without retry.`);
-          return result;
+          logger.warn(`Client error (${result.status}), attempt ${attempt + 1}/${settings.maxRetries + 1}`);
+          if (attempt < settings.maxRetries) {
+            attempt = await handleRetry(new Error(`Client error (${result.status}): ${result.statusText}`), result, attempt, settings, logger);
+            continue;
+          } else {
+            lastError = new Error(`Client error (${result.status}): ${result.statusText}`);
+            lastResponse = result;
+            break;
+          }
         }
 
         logger.error(`Unexpected HTTP status: ${result.status}. Throwing error.`);
