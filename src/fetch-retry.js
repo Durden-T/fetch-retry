@@ -274,6 +274,7 @@ export function createRetryableFetch(originalFetch, settings, logger) {
             logger.debug(`Fetch successful (status ${result.status}).`);
 
             // Check if response body contains an error field (if enabled)
+            let hasResponseError = false;
             if (settings.checkResponseErrorField) {
               logger.debug('Checking for error field in response body.');
               try {
@@ -287,19 +288,22 @@ export function createRetryableFetch(originalFetch, settings, logger) {
                   if (data && typeof data.error === 'string' && data.error.length > MIN_ERROR_LENGTH) {
                     logger.warn(`Response body contains error field (length: ${data.error.length}): ${data.error}`);
                     lastResponse = result.clone();
-
-                    if (attempt < settings.maxRetries) {
-                      attempt = await handleRetry(new Error(`Response error: ${data.error}`), result, attempt, settings, logger);
-                      continue;
-                    } else {
-                      logger.error(`Max retries reached for response with error field.`);
-                      lastError = new Error(`Response error: ${data.error}`);
-                      break;
-                    }
+                    lastError = new Error(`Response error: ${data.error}`);
+                    hasResponseError = true;
                   }
                 }
               } catch (parseError) {
                 logger.warn(`Could not parse JSON response for error checking: ${parseError.message}`);
+              }
+            }
+
+            if (hasResponseError) {
+              if (attempt < settings.maxRetries) {
+                attempt = await handleRetry(lastError, lastResponse, attempt, settings, logger);
+                continue;
+              } else {
+                logger.error(`Max retries reached for response with error field.`);
+                break;
               }
             }
 
