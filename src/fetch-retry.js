@@ -285,10 +285,24 @@ export function createRetryableFetch(originalFetch, settings, logger) {
                   const data = await clonedResponse.json();
                   const MIN_ERROR_LENGTH = 2;
 
-                  if (data && typeof data.error === 'string' && data.error.length > MIN_ERROR_LENGTH) {
-                    logger.warn(`Response body contains error field (length: ${data.error.length}): ${data.error}`);
+                  let errorMessage = null;
+
+                  if (data && data.error !== undefined && data.error !== null) {
+                    if (typeof data.error === 'string' && data.error.length > MIN_ERROR_LENGTH) {
+                      errorMessage = data.error;
+                    } else if (typeof data.error === 'object') {
+                      if (data.error.message && typeof data.error.message === 'string') {
+                        errorMessage = data.error.message;
+                      } else {
+                        errorMessage = JSON.stringify(data.error);
+                      }
+                    }
+                  }
+
+                  if (errorMessage && errorMessage.length > MIN_ERROR_LENGTH) {
+                    logger.warn(`Response body contains error field: ${errorMessage}`);
                     lastResponse = result.clone();
-                    lastError = new Error(`Response error: ${data.error}`);
+                    lastError = new Error(`Response error: ${errorMessage}`);
                     hasResponseError = true;
                   }
                 }
