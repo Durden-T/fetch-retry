@@ -55,6 +55,13 @@ export const SETTINGS_CONFIG = [
   },
   {
     type: 'checkbox',
+    varId: 'checkResponseErrorField',
+    displayText: 'Check for Error Field in Responses',
+    default: true,
+    description: 'Retry successful responses (200-299) if they contain an error field with length > 2.',
+  },
+  {
+    type: 'checkbox',
     varId: 'showErrorNotification',
     displayText: 'Show Error Notification',
     default: true,
