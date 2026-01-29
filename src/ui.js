@@ -1,4 +1,4 @@
-import { SETTINGS_CONFIG } from './settings.js';
+import { SETTINGS_CONFIG, incrementSettingsVersion } from './settings.js';
 
 const EXTENSION_NAME = 'Fetch Retry';
 const extensionName = 'fetch-retry';
@@ -70,6 +70,7 @@ function createSettingItem(container, setting, settings, context, logger) {
       inputElement.checked = Boolean(settings[varId] ?? defaultValue);
       inputElement.addEventListener('change', () => {
         settings[varId] = inputElement.checked;
+        incrementSettingsVersion(settings);
         context.saveSettingsDebounced();
         if (varId === 'enabled') {
           toggleCss(inputElement.checked, logger);
@@ -89,6 +90,7 @@ function createSettingItem(container, setting, settings, context, logger) {
       inputElement.addEventListener('input', () => {
         const value = Number(inputElement.value);
         settings[varId] = value;
+        incrementSettingsVersion(settings);
         context.saveSettingsDebounced();
         const numberInput = document.getElementById(`fetch-retry-${varId}-number`);
         if (numberInput) {
@@ -104,10 +106,10 @@ function createSettingItem(container, setting, settings, context, logger) {
       numberInput.max = String(setting.max);
       numberInput.step = String(setting.step);
       numberInput.value = String(settings[varId] ?? defaultValue);
-      numberInput.style.marginLeft = '10px';
       numberInput.addEventListener('change', () => {
         const value = Number(numberInput.value);
         settings[varId] = value;
+        incrementSettingsVersion(settings);
         context.saveSettingsDebounced();
         inputElement.value = numberInput.value;
         logger.debug(`Number input setting changed: ${varId} = ${numberInput.value}`);
@@ -134,6 +136,7 @@ function createSettingItem(container, setting, settings, context, logger) {
       inputElement.value = String(settings[varId] ?? defaultValue);
       inputElement.addEventListener('change', () => {
         settings[varId] = inputElement.value;
+        incrementSettingsVersion(settings);
         context.saveSettingsDebounced();
         logger.debug(`Select setting changed: ${varId} = ${inputElement.value}`);
       });
@@ -144,17 +147,13 @@ function createSettingItem(container, setting, settings, context, logger) {
       inputElement.id = `fetch-retry-${varId}`;
       inputElement.classList.add('text_pole');
       inputElement.rows = 5;
-      inputElement.style.width = '100%';
-      inputElement.style.fontFamily = 'monospace';
 
       const patterns = settings[varId] ?? defaultValue;
       inputElement.value = Array.isArray(patterns) ? patterns.join('\n') : '';
 
       const errorElement = document.createElement('div');
       errorElement.id = `fetch-retry-${varId}-error`;
-      errorElement.style.color = 'var(--SmartThemeQuoteColor, #ff4444)';
-      errorElement.style.marginTop = '5px';
-      errorElement.style.display = 'none';
+      errorElement.classList.add('validation-error');
 
       inputElement.addEventListener('input', () => {
         const lines = inputElement.value
@@ -190,12 +189,13 @@ function createSettingItem(container, setting, settings, context, logger) {
 
         if (errors.length > 0) {
           errorElement.textContent = errors.join('; ');
-          errorElement.style.display = 'block';
-          inputElement.style.borderColor = 'var(--SmartThemeQuoteColor, #ff4444)';
+          errorElement.classList.add('visible');
+          inputElement.classList.add('error');
         } else {
-          errorElement.style.display = 'none';
-          inputElement.style.borderColor = '';
+          errorElement.classList.remove('visible');
+          inputElement.classList.remove('error');
           settings[varId] = lines;
+          incrementSettingsVersion(settings);
           context.saveSettingsDebounced();
           logger.debug(`Textarea setting changed: ${varId} = ${JSON.stringify(lines)}`);
         }

@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');
-
 #FetchRetry-drawer {
     --fr-terminal-bg: #0a0e14;
     --fr-panel-bg: #0d1117;
@@ -16,7 +14,7 @@
 }
 
 #FetchRetry-drawer:has(.inline-drawer-content.open) {
-    font-family: 'IBM Plex Mono', 'Courier New', monospace;
+    font-family: 'SF Mono, Monaco, Inconsolata, Fira Code, Fira Mono, Roboto Mono, Consolas', 'Courier New', monospace;
     background: var(--fr-terminal-bg);
     border: 1px solid var(--fr-border);
     border-radius: 0;
@@ -76,7 +74,7 @@
 }
 
 #FetchRetry-drawer:has(.inline-drawer-content.open) .inline-drawer-header b {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: 'SF Mono, Monaco, Inconsolata, Fira Code, Fira Mono, Roboto Mono, Consolas', monospace;
     font-size: 15px;
     font-weight: 700;
     letter-spacing: 2px;
@@ -186,7 +184,7 @@
 }
 
 #FetchRetry-drawer .fetch-retry-setting-wrapper label {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: 'SF Mono, Monaco, Inconsolata, Fira Code, Fira Mono, Roboto Mono, Consolas', monospace;
     font-size: 13px;
     font-weight: 600;
     color: var(--fr-text-primary);
@@ -196,7 +194,7 @@
 }
 
 #FetchRetry-drawer .fetch-retry-setting-wrapper small {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: 'SF Mono, Monaco, Inconsolata, Fira Code, Fira Mono, Roboto Mono, Consolas', monospace;
     font-size: 11px;
     color: var(--fr-text-secondary);
     line-height: 1.6;
@@ -254,7 +252,7 @@
 }
 
 #FetchRetry-drawer .fetch-retry-setting-wrapper input[type="number"] {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: 'SF Mono, Monaco, Inconsolata, Fira Code, Fira Mono, Roboto Mono, Consolas', monospace;
     background: var(--fr-terminal-bg);
     border: 2px solid var(--fr-border);
     color: var(--fr-accent-cyan);
@@ -291,7 +289,7 @@
 }
 
 #FetchRetry-drawer .fetch-retry-setting-wrapper select {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: 'SF Mono, Monaco, Inconsolata, Fira Code, Fira Mono, Roboto Mono, Consolas', monospace;
     background: var(--fr-terminal-bg);
     border: 2px solid var(--fr-border);
     color: var(--fr-accent-cyan);
@@ -331,7 +329,7 @@
 #FetchRetry-drawer .fetch-retry-setting-wrapper textarea {
     width: 100%;
     min-height: 150px;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: 'SF Mono, Monaco, Inconsolata, Fira Code, Fira Mono, Roboto Mono, Consolas', monospace;
     background: var(--fr-terminal-bg);
     border: 2px solid var(--fr-border);
     color: var(--fr-text-primary);
@@ -351,6 +349,21 @@
     box-shadow: 0 0 15px var(--fr-glow-cyan);
 }
 
+#FetchRetry-drawer .fetch-retry-setting-wrapper textarea.error {
+    border-color: var(--fr-accent-red);
+}
+
+#FetchRetry-drawer .fetch-retry-setting-wrapper .validation-error {
+    color: var(--fr-accent-red);
+    margin-top: 5px;
+    font-size: 11px;
+    display: none;
+}
+
+#FetchRetry-drawer .fetch-retry-setting-wrapper .validation-error.visible {
+    display: block;
+}
+
 #FetchRetry-drawer .fetch-retry-setting-wrapper .button-container {
     display: flex;
     gap: 10px;
@@ -363,7 +376,7 @@
     padding: 14px 16px;
     margin-bottom: 16px;
     border-radius: 0;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: 'SF Mono, Monaco, Inconsolata, Fira Code, Fira Mono, Roboto Mono, Consolas', monospace;
     font-size: 12px;
     line-height: 1.6;
     position: relative;

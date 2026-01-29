@@ -1,5 +1,5 @@
 import { createLogger } from './src/logger.js';
-import { createSettingsProxy, DEFAULT_SETTINGS } from './src/settings.js';
+import { getSettingsReference, DEFAULT_SETTINGS } from './src/settings.js';
 import { toggleCss, initExtensionUI } from './src/ui.js';
 import { createRetryableFetch } from './src/fetch-retry.js';
 
@@ -8,7 +8,7 @@ const settingsKey = 'FetchRetry';
 (function initExtension() {
   const context = SillyTavern.getContext();
 
-  const settings = createSettingsProxy(context, settingsKey, {
+  const settings = getSettingsReference(context, settingsKey, {
     info: msg => console.log(`[Fetch Retry] ${msg}`),
   });
 
