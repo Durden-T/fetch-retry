@@ -283,7 +283,7 @@ export function createRetryableFetch(originalFetch, settings, logger) {
 
                 if (contentType && contentType.includes('application/json')) {
                   const data = await clonedResponse.json();
-                  const MIN_ERROR_LENGTH = 2;
+                  const MIN_ERROR_LENGTH = 3;
 
                   let errorMessage = null;
 
