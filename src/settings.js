@@ -61,16 +61,6 @@ export const SETTINGS_CONFIG = [
     description: 'Display a notification if all fetch retries fail.',
   },
   {
-    type: 'slider',
-    varId: 'streamInactivityTimeout',
-    displayText: 'Stream Inactivity Timeout (ms)',
-    default: 30000,
-    min: 5000,
-    max: 120000,
-    step: 1000,
-    description: 'If a streaming response stops sending data for this duration, the request is retried.',
-  },
-  {
     type: 'checkbox',
     varId: 'debugMode',
     displayText: 'Enable Debug Mode',
@@ -131,9 +121,14 @@ export function loadSettings(saved, target) {
   });
 }
 
-export function createSettingsProxy(context, settingsKey, logger) {
+export function getSettingsReference(context, settingsKey, logger) {
   if (!context.extensionSettings[settingsKey]) {
-    context.extensionSettings[settingsKey] = structuredClone(DEFAULT_SETTINGS);
+    try {
+      context.extensionSettings[settingsKey] = structuredClone(DEFAULT_SETTINGS);
+    } catch (err) {
+      logger.warn('structuredClone failed, using JSON fallback:', err.message);
+      context.extensionSettings[settingsKey] = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
+    }
     logger.info('No existing settings found, applying default settings.');
   }
 
@@ -143,5 +138,20 @@ export function createSettingsProxy(context, settingsKey, logger) {
     }
   }
 
-  return context.extensionSettings[settingsKey];
+  if (context.extensionSettings[settingsKey]._settingsVersion === undefined) {
+    context.extensionSettings[settingsKey]._settingsVersion = 0;
+  }
+
+  const settings = context.extensionSettings[settingsKey];
+
+  if (Array.isArray(settings.urlPatterns) && settings.urlPatterns.length > 50) {
+    logger.warn(`URL patterns exceed limit (${settings.urlPatterns.length}/50), truncating.`);
+    settings.urlPatterns = settings.urlPatterns.slice(0, 50);
+  }
+
+  return settings;
+}
+
+export function incrementSettingsVersion(settings) {
+  settings._settingsVersion = (settings._settingsVersion || 0) + 1;
 }

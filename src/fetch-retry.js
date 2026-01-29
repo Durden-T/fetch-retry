@@ -1,18 +1,26 @@
 import { showRetryToast, showErrorNotification } from './toast.js';
 
 let cachedPatterns = null;
-let cachedPatternsKey = null;
+let cachedPatternsVersion = -1;
 
-function getCachedPatterns(urlPatterns, logger) {
-  const patternsKey = JSON.stringify(urlPatterns);
-
-  if (cachedPatternsKey === patternsKey && cachedPatterns !== null) {
+function getCachedPatterns(urlPatterns, settingsVersion, logger) {
+  if (cachedPatternsVersion === settingsVersion && cachedPatterns !== null) {
     return cachedPatterns;
   }
 
   const compiledPatterns = [];
   for (const pattern of urlPatterns) {
     try {
+      if (pattern.length > 500) {
+        logger.warn(`Pattern too long (${pattern.length} chars), skipping: ${pattern.substring(0, 50)}...`);
+        continue;
+      }
+
+      if (/(\+\*|\*\+|\{\d{3,}\}|\+{3,}|\*{3,})/.test(pattern)) {
+        logger.warn(`Pattern contains potentially dangerous repetition quantifiers, skipping: ${pattern}`);
+        continue;
+      }
+
       compiledPatterns.push(new RegExp(pattern));
     } catch (err) {
       logger.warn(`Invalid regex pattern "${pattern}": ${err.message}`);
@@ -20,14 +28,14 @@ function getCachedPatterns(urlPatterns, logger) {
   }
 
   cachedPatterns = compiledPatterns;
-  cachedPatternsKey = patternsKey;
+  cachedPatternsVersion = settingsVersion;
   logger.debug(`Compiled ${compiledPatterns.length} regex patterns (cached).`);
 
   return compiledPatterns;
 }
 
 function shouldApplyRetryLogic(url, settings, logger) {
-  const { urlPatterns, urlFilterMode } = settings;
+  const { urlPatterns, urlFilterMode, _settingsVersion = 0 } = settings;
 
   if (!Array.isArray(urlPatterns) || urlPatterns.length === 0) {
     if (urlFilterMode === 'include') {
@@ -38,7 +46,7 @@ function shouldApplyRetryLogic(url, settings, logger) {
     return true;
   }
 
-  const compiledPatterns = getCachedPatterns(urlPatterns, logger);
+  const compiledPatterns = getCachedPatterns(urlPatterns, _settingsVersion, logger);
 
   if (compiledPatterns.length === 0) {
     if (urlFilterMode === 'include') {
@@ -128,13 +136,14 @@ async function prepareRequestData(args) {
 
 function calculateRetryDelay(error, response, attempt, settings, logger) {
   logger.debug(`Calculating retry delay for attempt ${attempt}.`);
+  const MAX_DELAY = 30000;
   let delay = 0;
 
   if (response && response.headers.has('Retry-After')) {
     const retryAfter = response.headers.get('Retry-After');
     const seconds = parseInt(retryAfter, 10);
     if (!isNaN(seconds)) {
-      delay = Math.max(delay, Math.min(seconds * 1000, 30000));
+      delay = Math.max(delay, Math.min(seconds * 1000, MAX_DELAY));
       logger.debug(`Retry-After header found: ${seconds}s, adjusted delay: ${delay}ms`);
     }
   }
@@ -145,21 +154,25 @@ function calculateRetryDelay(error, response, attempt, settings, logger) {
   }
 
   delay = Math.max(delay, settings.retryDelay * Math.pow(1.2, attempt));
-  logger.debug(`Final delay after exponential backoff: ${delay}ms`);
+  delay = Math.min(delay, MAX_DELAY);
+
+  const jitter = delay * 0.1 * (Math.random() * 2 - 1);
+  delay = Math.max(0, delay + jitter);
+
+  logger.debug(`Final delay after exponential backoff with jitter: ${delay}ms`);
 
   return delay;
 }
 
 async function handleRetry(error, response, attempt, settings, logger) {
-  if (attempt > 0) {
-    showRetryToast(attempt, settings.maxRetries, error);
-  }
+  const nextAttempt = attempt + 1;
+  showRetryToast(nextAttempt, settings.maxRetries, error);
 
   const delay = calculateRetryDelay(error, response, attempt, settings, logger);
   logger.info(`Waiting ${delay}ms before retry...`);
 
   await new Promise(resolve => setTimeout(resolve, delay));
-  return attempt + 1;
+  return nextAttempt;
 }
 
 export function createRetryableFetch(originalFetch, settings, logger) {
@@ -189,63 +202,80 @@ export function createRetryableFetch(originalFetch, settings, logger) {
 
     const { baseUrl, baseInit, bodyContent } = await prepareRequestData(args);
 
-    while (attempt <= settings.maxRetries) {
-      logger.debug(`Starting fetch attempt ${attempt + 1}/${settings.maxRetries + 1}`);
-      if (originalSignal?.aborted) {
-        logger.info('Request aborted by user during retry loop. Returning abort error.');
-        const abortError = new DOMException('Request aborted by user', 'AbortError');
-        throw abortError;
-      }
-
-      const controller = new AbortController();
-      const userAbortHandler = () => {
+    let currentController = null;
+    const userAbortHandler = () => {
+      if (currentController) {
         logger.debug('User aborted signal received.');
-        controller.abort('User aborted');
-      };
-      if (originalSignal) {
-        originalSignal.addEventListener('abort', userAbortHandler, { once: true });
+        currentController.abort(new Error('User aborted'));
       }
-      const { signal } = controller;
-      let timeoutId;
+    };
 
-      const currentUrl = baseUrl;
-      const currentInit = { ...baseInit, signal };
+    if (originalSignal) {
+      originalSignal.addEventListener('abort', userAbortHandler);
+    }
 
-      if (bodyContent !== null) {
-        currentInit.body = bodyContent;
-      }
-
-      logger.debug(`Created request for attempt ${attempt + 1} with ${bodyContent ? 'body' : 'no body'}`);
-
-      try {
-        logger.debug('Executing original fetch...');
-        const fetchPromise = originalFetch.apply(this, [currentUrl, currentInit]);
-
-        let timeoutPromise = null;
-        if (settings.enableThinkingTimeout) {
-          timeoutPromise = new Promise((_, reject) => {
-            timeoutId = setTimeout(() => {
-              const error = new Error('Thinking timeout reached');
-              error.name = 'TimeoutError';
-              controller.abort();
-              reject(error);
-              logger.warn('Fetch request timed out.');
-            }, settings.thinkingTimeout);
-          });
+    try {
+      while (attempt <= settings.maxRetries) {
+        logger.debug(`Starting fetch attempt ${attempt + 1}/${settings.maxRetries + 1}`);
+        if (originalSignal?.aborted) {
+          logger.info('Request aborted by user during retry loop. Returning abort error.');
+          const abortError = new DOMException('Request aborted by user', 'AbortError');
+          throw abortError;
         }
 
-        const result = timeoutPromise ?
-          await Promise.race([fetchPromise, timeoutPromise]) :
-          await fetchPromise;
+        const controller = new AbortController();
+        currentController = controller;
+        const { signal } = controller;
+        let timeoutId;
 
-        logger.debug('Fetch promise resolved or timed out.');
-
-        lastResponse = result;
-
-        if (result.ok) {
-          logger.debug(`Fetch successful (status ${result.status}).`);
-          return result;
+        // Check again for race condition - user might have aborted during setup
+        if (originalSignal?.aborted) {
+          logger.info('Request aborted by user during controller setup.');
+          const abortError = new DOMException('Request aborted by user', 'AbortError');
+          throw abortError;
         }
+
+        const currentUrl = baseUrl;
+        const currentInit = { ...baseInit, signal };
+
+        if (bodyContent !== null) {
+          currentInit.body = bodyContent;
+        }
+
+        logger.debug(`Created request for attempt ${attempt + 1} with ${bodyContent ? 'body' : 'no body'}`);
+
+        try {
+          logger.debug('Executing original fetch...');
+          const fetchPromise = originalFetch.apply(this, [currentUrl, currentInit]);
+
+          let timeoutPromise = null;
+          if (settings.enableThinkingTimeout) {
+            timeoutPromise = new Promise((_, reject) => {
+              timeoutId = setTimeout(() => {
+                const error = new Error('Thinking timeout reached');
+                error.name = 'TimeoutError';
+                controller.abort();
+                reject(error);
+                logger.warn('Fetch request timed out.');
+              }, settings.thinkingTimeout);
+            });
+          }
+
+          const result = timeoutPromise ?
+            await Promise.race([fetchPromise, timeoutPromise]) :
+            await fetchPromise;
+
+          logger.debug('Fetch promise resolved or timed out.');
+
+          if (result.ok) {
+            if (timeoutId) {
+              clearTimeout(timeoutId);
+            }
+            logger.debug(`Fetch successful (status ${result.status}).`);
+            return result;
+          }
+
+        lastResponse = result.clone();
 
         if (result.status === 429) {
           const url = args[0] instanceof Request ? args[0].url : String(args[0]);
@@ -256,7 +286,6 @@ export function createRetryableFetch(originalFetch, settings, logger) {
           } else {
             logger.error(`Max retries reached for 429 error on ${url}.`);
             lastError = new Error(`Rate limited (429): ${result.statusText}`);
-            lastResponse = result;
             break;
           }
         } else if (result.status >= 500) {
@@ -266,7 +295,6 @@ export function createRetryableFetch(originalFetch, settings, logger) {
             continue;
           } else {
             lastError = new Error(`Server error (${result.status}): ${result.statusText}`);
-            lastResponse = result;
             break;
           }
         } else if (result.status >= 400) {
@@ -276,58 +304,60 @@ export function createRetryableFetch(originalFetch, settings, logger) {
             continue;
           } else {
             lastError = new Error(`Client error (${result.status}): ${result.statusText}`);
-            lastResponse = result;
             break;
           }
         }
 
         logger.error(`Unexpected HTTP status: ${result.status}. Throwing error.`);
         throw new Error(`HTTP ${result.status}: ${result.statusText}`);
-      } catch (err) {
-        lastError = err;
-        logger.error('Caught error during fetch attempt:', err);
-        logger.debug('Full error object for debugging:', JSON.stringify(err, Object.getOwnPropertyNames(err)));
+        } catch (err) {
+          lastError = err;
+          logger.error('Caught error during fetch attempt:', err);
+          logger.debug('Full error object for debugging:', JSON.stringify(err, Object.getOwnPropertyNames(err)));
 
-        let shouldRetry = false;
-        let retryReason = '';
+          let shouldRetry = false;
+          let retryReason = '';
 
-        if (err.name === 'TimeoutError') {
-          retryReason = `AI thinking timeout (${settings.thinkingTimeout}ms)`;
-          shouldRetry = true;
-        } else if (err.name === 'AbortError') {
-          if (originalSignal?.aborted || err.message === 'User aborted' || err.message === 'Request aborted by user') {
-            logger.info('Request aborted by user. Not retrying, propagating abort.');
-            throw err;
+          if (err.name === 'TimeoutError') {
+            retryReason = `AI thinking timeout (${settings.thinkingTimeout}ms)`;
+            shouldRetry = true;
+          } else if (err.name === 'AbortError') {
+            if (originalSignal?.aborted || err.message === 'User aborted' || err.message === 'Request aborted by user') {
+              logger.info('Request aborted by user. Not retrying, propagating abort.');
+              throw err;
+            }
+            retryReason = `Request aborted (${err.message})`;
+            shouldRetry = true;
+          } else {
+            logger.warn(`Non-specific error: ${err.message}, checking if retry is possible. Attempt ${attempt + 1}/${settings.maxRetries + 1}`);
+            shouldRetry = true;
           }
-          retryReason = `Request aborted (${err.message})`;
-          shouldRetry = true;
-        } else {
-          logger.warn(`Non-specific error: ${err.message}, checking if retry is possible. Attempt ${attempt + 1}/${settings.maxRetries + 1}`);
-          shouldRetry = true;
-        }
 
-        if (shouldRetry) {
-          logger.warn(`${retryReason}, retrying... attempt ${attempt + 1}/${settings.maxRetries + 1}`);
-        }
+          if (shouldRetry) {
+            logger.warn(`${retryReason}, retrying... attempt ${attempt + 1}/${settings.maxRetries + 1}`);
+          }
 
-        if (attempt >= settings.maxRetries) {
-          logger.error('Max retries reached for current error. Breaking retry loop.');
-          break;
-        }
+          if (attempt >= settings.maxRetries) {
+            logger.error('Max retries reached for current error. Breaking retry loop.');
+            break;
+          }
 
-        attempt = await handleRetry(err, lastResponse, attempt, settings, logger);
-      } finally {
-        if (timeoutId) {
-          clearTimeout(timeoutId);
-        }
-        if (originalSignal) {
-          originalSignal.removeEventListener('abort', userAbortHandler);
+          attempt = await handleRetry(err, lastResponse, attempt, settings, logger);
+        } finally {
+          if (timeoutId) {
+            clearTimeout(timeoutId);
+          }
         }
       }
-    }
 
-    logger.error(`All ${settings.maxRetries + 1} attempts failed. Final error:`, lastError);
-    showErrorNotification(lastError, lastResponse, settings);
-    throw lastError;
+      logger.error(`All ${settings.maxRetries + 1} attempts failed. Final error:`, lastError);
+      showErrorNotification(lastError, lastResponse, settings);
+      throw lastError;
+    } finally {
+      if (originalSignal) {
+        originalSignal.removeEventListener('abort', userAbortHandler);
+      }
+      currentController = null;
+    }
   };
 }
